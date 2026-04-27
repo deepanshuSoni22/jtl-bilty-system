@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>JTL — New Bilty</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Header -->
+<div class="app-header">
+  <div class="container-fluid px-3">
+    <h1>Jatin Trans Logistics</h1>
+    <p>GSTIN: 29ARAPC8852F1ZS &nbsp;·&nbsp; New Bilty</p>
+    <div class="bill-badge">
+      <small>BILL #</small>&nbsp;<strong id="billNoDisplay">—</strong>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-3 py-3" style="max-width:720px; padding-bottom:50px;">
+
+  <!-- Setup banner (shown only first time) -->
+  <div class="setup-banner" id="setupBanner" style="display:none;">
+    <strong>⚙️ One-time setup required</strong>
+    <p>Paste your Apps Script Web App URL below and tap Save. You only need to do this once per device.</p>
+    <input type="text" class="form-control mono" id="urlInput"
+      placeholder="https://script.google.com/macros/s/AKfy.../exec"
+      style="font-size:12px;">
+    <button class="btn-save-url" onclick="saveScriptUrl()">Save & Connect</button>
+  </div>
+
+  <!-- Bill Info -->
+  <div class="card">
+    <div class="card-header">Bill Information</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-6">
+          <label class="form-label">Bill No <span class="text-opt">(auto)</span></label>
+          <input type="text" class="form-control mono" id="billNo" readonly placeholder="Loading…">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Bill Date <span class="text-req">*</span></label>
+          <input type="date" class="form-control" id="billDate" required>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Party Details -->
+  <div class="card">
+    <div class="card-header">Party Details</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Bill To <span class="text-req">*</span></label>
+          <textarea class="form-control" id="billTo" rows="4"
+            placeholder="Company name&#10;Address line 1&#10;Address line 2&#10;City - Pincode" required></textarea>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Ship To <span class="text-opt">(optional)</span></label>
+          <textarea class="form-control" id="shipTo" rows="4"
+            placeholder="Company name&#10;Address line 1&#10;Address line 2&#10;City - Pincode"></textarea>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Bill To GSTIN <span class="text-opt">(optional)</span></label>
+          <input type="text" class="form-control mono" id="billToGstin"
+            placeholder="29AABCA1234B1ZV" maxlength="15"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Ship To GSTIN <span class="text-opt">(optional)</span></label>
+          <input type="text" class="form-control mono" id="shipToGstin"
+            placeholder="27AABCA1234B1ZV" maxlength="15"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Consignment Details -->
+  <div class="card">
+    <div class="card-header">Consignment Details</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12 col-sm-6">
+          <label class="form-label">C/Note No <span class="text-req">*</span>
+            <span class="text-opt"> — multiple? press Enter for each</span>
+          </label>
+          <textarea class="form-control mono" id="cnoteNo" rows="3"
+            placeholder="CN-2026-001&#10;CN-2026-002" required></textarea>
+        </div>
+        <div class="col-12 col-sm-6">
+          <label class="form-label">C/Note Date <span class="text-req">*</span></label>
+          <input type="date" class="form-control" id="cnoteDate" required>
+        </div>
+        <div class="col-12"><hr class="my-1"></div>
+        <div class="col-12 col-sm-4">
+          <label class="form-label">From <span class="text-req">*</span></label>
+          <input type="text" class="form-control" id="from" placeholder="Bangalore" required>
+        </div>
+        <div class="col-12 col-sm-4">
+          <label class="form-label">To <span class="text-req">*</span></label>
+          <input type="text" class="form-control" id="to" placeholder="Mumbai" required>
+        </div>
+        <div class="col-12 col-sm-4">
+          <label class="form-label">No. of Packages</label>
+          <input type="text" class="form-control" id="packages" placeholder="e.g. 12 Boxes">
+        </div>
+        <div class="col-12 col-sm-6">
+          <label class="form-label">Vehicle No <span class="text-req">*</span></label>
+          <input type="text" class="form-control mono" id="vehicleNo"
+            placeholder="KA-01-AB-1234" required
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="col-12 col-sm-6">
+          <label class="form-label">Type of Vehicle</label>
+          <input type="text" class="form-control" id="vehicleType"
+            placeholder="e.g. 22-Wheeler, Container">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charges & Amounts -->
+  <div class="card">
+    <div class="card-header">Charges &amp; Amounts (₹)</div>
+    <div class="card-body">
+      <div id="amountRows"></div>
+      <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-1"
+        id="btnAddAmount" onclick="addAmount()">
+        + Add Another Amount
+      </button>
+      <div class="total-bar">
+        <span class="lbl">Freight Total</span>
+        <span class="val" id="runningTotal">₹ 0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax -->
+  <div class="card">
+    <div class="card-header">Tax</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-6">
+          <label class="form-label">CGST % <span class="text-opt">(or "-")</span></label>
+          <input type="text" class="form-control mono" id="cgstPct" placeholder="-">
+        </div>
+        <div class="col-6">
+          <label class="form-label">SGST % <span class="text-opt">(or "-")</span></label>
+          <input type="text" class="form-control mono" id="sgstPct" placeholder="-">
+        </div>
+        <div class="col-12">
+          <div class="igst-toggle-row d-flex justify-content-between align-items-center gap-3">
+            <div>
+              <div style="font-size:13px; font-weight:600;">IGST @ 18%</div>
+              <div style="font-size:11px; color:#6c757d;">18% of freight total → written to L32</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="igst-val" id="igstResult"></span>
+              <div class="toggle-track" id="igstTrack" onclick="toggleIgst()">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Other Details -->
+  <div class="card">
+    <div class="card-header">Other Details</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12 col-sm-6">
+          <label class="form-label">GST Payable By <span class="text-opt">(optional)</span></label>
+          <input type="text" class="form-control" id="gstPayableBy"
+            placeholder="e.g. Consignor, Consignee, Agent">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button type="button" class="btn-jtl-primary" id="btnSubmit" onclick="submitForm()">
+    <div class="spinner-border text-white"
+      id="spinner" style="display:none; width:18px; height:18px; border-width:2px;" role="status"></div>
+    <span id="btnLabel">Generate Bilty PDF</span>
+  </button>
+
+  <!-- Error -->
+  <div class="alert alert-danger mt-3 d-none" id="errorBar" role="alert"></div>
+
+  <!-- Processing card (shown while background job runs) -->
+  <div class="processing-card" id="processingCard">
+    <div class="spinner-border text-primary" style="width:36px; height:36px;" role="status"></div>
+    <div class="processing-title">Generating your Bilty…</div>
+    <div class="processing-sub" id="processingMsg">This usually takes 30–60 seconds. Please wait.</div>
+    <div class="processing-steps mt-3">
+      <div class="step done"   id="step1"><span class="step-icon"></span> Form received &amp; Bill # assigned</div>
+      <div class="step active" id="step2"><span class="step-icon"></span> Populating Invoice Template</div>
+      <div class="step wait"   id="step3"><span class="step-icon"></span> Exporting PDF</div>
+      <div class="step wait"   id="step4"><span class="step-icon"></span> Saving to Google Drive</div>
+      <div class="step wait"   id="step5"><span class="step-icon"></span> Logging to Bills Log</div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="result-card" id="resultCard">
+    <div class="result-head d-flex align-items-start gap-3">
+      <span style="font-size:24px; line-height:1;">✅</span>
+      <div>
+        <div class="r-title">Bilty Created Successfully</div>
+        <div class="r-sub">PDF saved to Google Drive — link logged in Bills Log sheet</div>
+      </div>
+    </div>
+    <div class="p-3">
+      <div class="result-meta" id="resultMeta"></div>
+      <div class="d-flex flex-wrap gap-2">
+        <a id="pdfLink" class="btn-jtl-pdf" target="_blank" rel="noopener">📄 Open PDF</a>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+          onclick="resetForm()">＋ New Bilty</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

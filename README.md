@@ -1,0 +1,2 @@
+- need to fix print layout margins being two pages print to make it single page.
+- need to ask why there's a Unknown error after form filled and submitted, pdf download also didn't happened neither website form got cleared to next bill no, And yet the drive and google sheets recieved the form filled data properly. 

@@ -128,11 +128,23 @@
   <div class="card">
     <div class="card-header">Charges &amp; Amounts (₹)</div>
     <div class="card-body">
-      <div id="amountRows"></div>
+
+      <!-- Column headers -->
+      <div class="charge-col-headers">
+        <span></span>
+        <span>Charge Label</span>
+        <span>Amount (₹)</span>
+        <span></span>
+      </div>
+
+      <!-- Dynamic charge rows injected here -->
+      <div id="chargeRows"></div>
+
       <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-1"
-        id="btnAddAmount" onclick="addAmount()">
-        + Add Another Amount
+        id="btnAddCharge" onclick="addCharge()">
+        + Add Another Charge
       </button>
+
       <div class="total-bar">
         <span class="lbl">Freight Total</span>
         <span class="val" id="runningTotal">₹ 0.00</span>
@@ -199,7 +211,7 @@
   <div class="processing-card" id="processingCard">
     <div class="spinner-border text-primary" style="width:36px; height:36px;" role="status"></div>
     <div class="processing-title">Generating your Bilty…</div>
-    <div class="processing-sub" id="processingMsg">This usually takes 30–60 seconds. Please wait.</div>
+    <div class="processing-sub">This usually takes 30–60 seconds. Please wait.</div>
     <div class="processing-steps mt-3">
       <div class="step done"   id="step1"><span class="step-icon"></span> Form received &amp; Bill # assigned</div>
       <div class="step active" id="step2"><span class="step-icon"></span> Populating Invoice Template</div>

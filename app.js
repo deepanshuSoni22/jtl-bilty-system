@@ -18,12 +18,12 @@ function saveScriptUrl() {
 // ══════════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════════
-var amountCount  = 0;
+var chargeCount  = 0;
 var igstOn       = false;
-var MAX_AMOUNTS  = 8;
+var MAX_CHARGES  = 8;
 var pollInterval = null;
 var pollCount    = 0;
-var MAX_POLLS    = 60;   // 60 × 3s = 3 minutes max wait
+var MAX_POLLS    = 60;  // 60 × 3s = 3 minutes max
 
 // ══════════════════════════════════════════════════════════════
 //  ON LOAD
@@ -32,7 +32,7 @@ window.onload = function () {
   var today = new Date().toISOString().split("T")[0];
   document.getElementById("billDate").value  = today;
   document.getElementById("cnoteDate").value = today;
-  addAmount(true);
+  addCharge(true);  // First row required
 
   if (!SCRIPT_URL) {
     document.getElementById("setupBanner").style.display = "block";
@@ -55,55 +55,80 @@ function loadBillNo() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  AMOUNT ROWS
+//  CHARGE ROWS
 // ══════════════════════════════════════════════════════════════
-function addAmount(required) {
-  if (amountCount >= MAX_AMOUNTS) return;
-  amountCount++;
+function addCharge(required) {
+  if (chargeCount >= MAX_CHARGES) return;
+  chargeCount++;
 
-  var row = document.createElement("div");
-  row.className = "amount-row d-flex align-items-center gap-2 mb-2";
-  row.id = "amtRow" + amountCount;
+  var wrapper = document.createElement("div");
+  wrapper.className = "charge-row";
+  wrapper.id = "chargeRow" + chargeCount;
 
-  var lbl = document.createElement("span");
-  lbl.className   = "amount-num";
-  lbl.textContent = amountCount + ".";
+  var inner = document.createElement("div");
+  inner.className = "charge-row-inner";
 
-  var inp = document.createElement("input");
-  inp.type      = "number";
-  inp.min       = "0";
-  inp.step      = "0.01";
-  inp.className = "form-control mono";
-  inp.placeholder = "Enter amount";
-  inp.id        = "amt" + amountCount;
-  inp.inputMode = "decimal";
-  if (required) inp.required = true;
-  inp.addEventListener("input", updateTotal);
+  // Row number
+  var num = document.createElement("span");
+  num.className   = "charge-num";
+  num.textContent = chargeCount + ".";
 
-  row.appendChild(lbl);
-  row.appendChild(inp);
+  // Label input (free text)
+  var labelInp = document.createElement("input");
+  labelInp.type        = "text";
+  labelInp.className   = "form-control";
+  labelInp.placeholder = "e.g. FREIGHT, TOLL, LOADING";
+  labelInp.id          = "chargeLabel" + chargeCount;
+  if (required) labelInp.required = true;
+  labelInp.addEventListener("input", function() {
+    labelInp.value = labelInp.value.toUpperCase();
+  });
 
-  if (amountCount > 1) {
-    var rm = document.createElement("button");
+  // Amount input
+  var amtInp = document.createElement("input");
+  amtInp.type        = "number";
+  amtInp.min         = "0";
+  amtInp.step        = "0.01";
+  amtInp.className   = "form-control mono";
+  amtInp.placeholder = "0.00";
+  amtInp.id          = "chargeAmt" + chargeCount;
+  amtInp.inputMode   = "decimal";
+  if (required) amtInp.required = true;
+  amtInp.addEventListener("input", updateTotal);
+
+  // Remove button (not on first row)
+  var rm = document.createElement("div"); // placeholder to keep grid
+  rm.style.width = "34px";
+
+  if (chargeCount > 1) {
+    rm = document.createElement("button");
     rm.type      = "button";
-    rm.className = "btn-remove-amt";
+    rm.className = "btn-remove-charge";
     rm.innerHTML = "&times;";
-    rm.title     = "Remove";
-    (function(rId) { rm.onclick = function() { removeAmount(rId); }; })(row.id);
-    row.appendChild(rm);
+    rm.title     = "Remove this charge";
+    (function(rowId) {
+      rm.onclick = function() { removeCharge(rowId); };
+    })(wrapper.id);
   }
 
-  document.getElementById("amountRows").appendChild(row);
-  if (!required) inp.focus();
+  inner.appendChild(num);
+  inner.appendChild(labelInp);
+  inner.appendChild(amtInp);
+  inner.appendChild(rm);
+  wrapper.appendChild(inner);
+
+  document.getElementById("chargeRows").appendChild(wrapper);
+  if (!required) labelInp.focus();
   updateAddBtn();
   updateTotal();
 }
 
-function removeAmount(rowId) {
+function removeCharge(rowId) {
   var row = document.getElementById(rowId);
   if (row) row.remove();
-  amountCount--;
-  document.querySelectorAll(".amount-num").forEach(function(el, i) {
+  chargeCount--;
+  // Renumber
+  document.querySelectorAll(".charge-num").forEach(function(el, i) {
     el.textContent = (i + 1) + ".";
   });
   updateAddBtn();
@@ -111,11 +136,11 @@ function removeAmount(rowId) {
 }
 
 function updateAddBtn() {
-  var btn = document.getElementById("btnAddAmount");
-  btn.disabled    = amountCount >= MAX_AMOUNTS;
-  btn.textContent = amountCount >= MAX_AMOUNTS
-    ? "Maximum 8 amounts reached"
-    : "+ Add Another Amount";
+  var btn = document.getElementById("btnAddCharge");
+  btn.disabled    = chargeCount >= MAX_CHARGES;
+  btn.textContent = chargeCount >= MAX_CHARGES
+    ? "Maximum 8 charges reached"
+    : "+ Add Another Charge";
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -123,8 +148,8 @@ function updateAddBtn() {
 // ══════════════════════════════════════════════════════════════
 function updateTotal() {
   var total = 0;
-  for (var i = 1; i <= MAX_AMOUNTS; i++) {
-    var el = document.getElementById("amt" + i);
+  for (var i = 1; i <= MAX_CHARGES; i++) {
+    var el = document.getElementById("chargeAmt" + i);
     if (el && el.value) total += parseFloat(el.value) || 0;
   }
   document.getElementById("runningTotal").textContent =
@@ -150,10 +175,17 @@ function toggleIgst() {
 //  COLLECT & VALIDATE
 // ══════════════════════════════════════════════════════════════
 function collectData() {
-  var amounts = [];
-  for (var i = 1; i <= MAX_AMOUNTS; i++) {
-    var el = document.getElementById("amt" + i);
-    amounts.push(el ? (el.value || "") : "");
+  var charges = [];
+  for (var i = 1; i <= MAX_CHARGES; i++) {
+    var lbl = document.getElementById("chargeLabel" + i);
+    var amt = document.getElementById("chargeAmt"   + i);
+    if (!lbl && !amt) continue;
+    var labelVal = lbl ? lbl.value.trim().toUpperCase() : "";
+    var amtVal   = amt ? (amt.value || "")              : "";
+    // Only include rows where at least one field is filled
+    if (labelVal !== "" || amtVal !== "") {
+      charges.push({ label: labelVal, amount: amtVal });
+    }
   }
   return {
     billDate:     document.getElementById("billDate").value,
@@ -168,7 +200,7 @@ function collectData() {
     packages:     document.getElementById("packages").value.trim(),
     vehicleNo:    document.getElementById("vehicleNo").value.trim().toUpperCase(),
     vehicleType:  document.getElementById("vehicleType").value.trim(),
-    amounts:      amounts,
+    charges:      charges,
     cgstPct:      document.getElementById("cgstPct").value.trim() || "-",
     sgstPct:      document.getElementById("sgstPct").value.trim() || "-",
     igst:         igstOn ? "YES" : "NO",
@@ -184,8 +216,10 @@ function validate(data) {
   if (!data.from)      return "From location is required.";
   if (!data.to)        return "To location is required.";
   if (!data.vehicleNo) return "Vehicle No is required.";
-  var hasAmt = data.amounts.some(function(a) { return a !== "" && parseFloat(a) > 0; });
-  if (!hasAmt) return "At least one Amount is required.";
+  var hasCharge = data.charges.some(function(c) {
+    return c.label !== "" || (c.amount !== "" && parseFloat(c.amount) > 0);
+  });
+  if (!hasCharge) return "At least one Charge is required.";
   return null;
 }
 
@@ -226,8 +260,7 @@ function submitForm() {
       return;
     }
 
-    // Job queued — show processing UI and start polling
-    showProcessing(result.billNo);
+    showProcessing();
     startPolling(result.jobId, result.billNo);
   })
   .catch(function(e) {
@@ -242,8 +275,6 @@ function submitForm() {
 // ══════════════════════════════════════════════════════════════
 function startPolling(jobId, billNo) {
   pollCount = 0;
-  var stepIndex = 1; // tracks fake progress steps
-
   pollInterval = setInterval(function() {
     pollCount++;
 
@@ -257,8 +288,7 @@ function startPolling(jobId, billNo) {
       clearInterval(pollInterval);
       hideProcessing();
       showError(
-        "It's taking longer than expected. Your bill is still being generated in the background. " +
-        "Check the Bills Log sheet in Google Sheets in a few minutes for the PDF link."
+        "Taking longer than expected. Check the Bills Log sheet in a few minutes for your PDF link."
       );
       return;
     }
@@ -275,7 +305,7 @@ function startPolling(jobId, billNo) {
       } else if (res.status === "error") {
         clearInterval(pollInterval);
         hideProcessing();
-        showError("Background job failed: " + (res.error || "Unknown error. Check Apps Script logs."));
+        showError("Background job failed: " + (res.error || "Check Apps Script logs."));
       }
       // status === "pending" or "running" → keep polling
     })
@@ -290,9 +320,7 @@ function activateStep(n) {
   for (var i = 1; i <= 5; i++) {
     var el = document.getElementById("step" + i);
     if (!el) continue;
-    if (i < n)  { el.className = "step done"; }
-    else if (i === n) { el.className = "step active"; }
-    else        { el.className = "step wait"; }
+    el.className = i < n ? "step done" : i === n ? "step active" : "step wait";
   }
 }
 
@@ -305,7 +333,7 @@ function setLoading(on) {
   document.getElementById("btnLabel").textContent  = on ? "Submitting…" : "Generate Bilty PDF";
 }
 
-function showProcessing(billNo) {
+function showProcessing() {
   document.getElementById("processingCard").classList.add("show");
   document.getElementById("processingCard").scrollIntoView({ behavior: "smooth" });
   activateStep(2);
